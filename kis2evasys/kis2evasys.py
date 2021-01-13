@@ -56,7 +56,7 @@ COURSELIST_FILE_ENCODING = "utf-8"
 # Am besten das geänderte einfach in die CSV-Datei einragen bevor es ins EvaSys geladen wird.
 # Das EvaSys bietet nach dem Import auch noch die Möglichkeit Dinge zu ändern
 
-# Desweiteren fällt auch noch eine Datei vorlesungen.csv raus, die eine Liste der Vorlesungen, der Zeiten und der Räume enthält
+# Desweiteren fällt auch noch eine Datei COURSELIST_FILENAME raus, die eine Liste der Vorlesungen, der Zeiten und der Räume enthält
 
 # Hier geht das Programm nun los, es zeigt den Fortschritt in der Konsole
 # Es kann schon mal 5 Minuten dauern bis das durchgelaufen ist
