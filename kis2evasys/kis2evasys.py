@@ -22,12 +22,12 @@ KIS2EvaSys - Umfragen aus KIS-Veranstaltungen anlegen
 __author__ = "Clemens Reibetanz, Christian De Schryver"
 
 # Bitte die 3 Werte eintragen
-SEMESTER = "[SS19]"
-# 27=WS15/16, 28=SS16, 29=WS16/17, 30=SS17, 31=WS17/18, 32=SS18, 33=WS18/19, 34=SS19
-PERIOD = 34
+
+SEMESTER = "[WS20/21]"
+# 27=WS15/16, 28=SS16, 29=WS16/17, 30=SS17,, 34=SS19, 35=WS19/20, 36=SS20, 37=WS20/21
+PERIOD = 37
 # URL von KIS -> Studiengänge und Veranstaltungen -> Elektrotechnik und Informationstechnik -> Elektrotechnik und Informationstechnik -> Dozent
-URL = 'https://www.kis.uni-kl.de/campus/all/eventlist.asp?mode=field&gguid=0x090A152C497B43FE801EDB13F2F5CA60&tguid=0x20A24741AF3347FEB6943B4BA195534F'
-# KIS Zeichensatz wie im HTML-Meta-Tag festgelegt
+URL = 'https://www.kis.uni-kl.de/campus/all/eventlist.asp?mode=field&gguid=0xC50E5DE8FF0E4C1291F629BB84CEF2B9&tguid=0xD65FE6B4D05A418B8DA0225E366FCD1E'
 URLENCODING = "iso-8859-1"
 
 # directory for generated output files
@@ -66,6 +66,7 @@ COURSELIST_FILE_ENCODING = "utf-8"
 import re
 import urllib.request
 import os
+import http
 
 
 # our datastructure
@@ -98,6 +99,7 @@ if not os.path.exists(data_directory):
 
 # list of events for EIT
 print("Reading KIS - URL: " + URL)
+
 with urllib.request.urlopen(URL) as url:
 	text = url.read().decode(URLENCODING)
 
@@ -115,6 +117,8 @@ for x in re_rows:
 lecture = []
 i = 0
 for x in re_excerciseOrLecture:
+	
+		
 	# get the name of the lecture and the lecturer and if it contains an excercise
 	nameOfLecture = re.search(r"eventlink.*?>(.*?)</a>", x, re.S)
 	nameOfLecturer = re.search(r"eventListLecturerCol.*?>.*?>(.*?)</a>", x, re.S)
@@ -137,28 +141,31 @@ for x in re_excerciseOrLecture:
 		typeOfLecture = typeOfLecture.group(1)
 	else:
 		typeOfLecture = ''
-
-	# find out the email of the lecturer and therefore open the subpage
-	urlofLecturer = re.search(r"<td name=\"eventListLecturerCol\".*?><.*?href=\"(.*?)\"", x, re.S)
-	if urlofLecturer:
-		with urllib.request.urlopen('http://www.kis.uni-kl.de/campus/all/' + urlofLecturer.group(1)) as url:
-			textofLecturerSubpage = url.read().decode(URLENCODING)
-		mailOfLecturer = re.search(r"E-Mail:<\/td>.*?>.*?>(.*?(?:\[at\]).*?)<\/a>", textofLecturerSubpage, re.S)
-		if mailOfLecturer:
-			mailOfLecturer = mailOfLecturer.group(1)
-			mailOfLecturer = mailOfLecturer.replace("[at]", "@")
+	
+	try:
+		# find out the email of the lecturer and therefore open the subpage
+		urlofLecturer = re.search(r"<td name=\"eventListLecturerCol\".*?><.*?href=\"(.*?)\"", x, re.S)
+		if urlofLecturer:
+				with urllib.request.urlopen('http://www.kis.uni-kl.de/campus/all/' + urlofLecturer.group(1)) as url:
+					textofLecturerSubpage = url.read().decode(URLENCODING)
+				mailOfLecturer = re.search(r"E-Mail:<\/td>.*?>.*?>(.*?(?:\[at\]).*?)<\/a>", textofLecturerSubpage, re.S)
+				if mailOfLecturer:
+					mailOfLecturer = mailOfLecturer.group(1)
+					mailOfLecturer = mailOfLecturer.replace("[at]", "@")
+				else:
+					mailOfLecturer = ''
 		else:
 			mailOfLecturer = ''
-	else:
-		mailOfLecturer = ''
-
+	except http.client.RemoteDisconnected as e:
+			print("\n Httpexception wurde geworfen \n")
+			continue
 	# find out when and where the event is, therefore open the subpage
 	urlofTimeAndDate = 'http://www.kis.uni-kl.de/campus/all/' + re.search(r"eventlink.*?href=\"(.*?)\">", x,
 	                                                                      re.S).group(1)
 	urlOfLecture = urlofTimeAndDate
 	with urllib.request.urlopen(urlofTimeAndDate) as url:
 		textOfTimeAndDateSubpage = url.read().decode(URLENCODING)
-	# get the language
+		# get the language
 	languageOfLecture = re.search(r"Unterrichtssprache:.(.*?)</td>", textOfTimeAndDateSubpage, re.S)
 	if languageOfLecture:
 		languageOfLecture = languageOfLecture.group(1)
@@ -197,11 +204,13 @@ for x in re_excerciseOrLecture:
 	lecture.append(
 		Vorlesung(nameOfLecture, nameOfLecturer, mailOfLecturer, codeOfLecture, typeOfLecture, languageOfLecture,
 		          urlOfLecture, date))
+    	
 	i = i + 1
-	print
-	i, '/', len(re_excerciseOrLecture)
+	print(	i, '/', len(re_excerciseOrLecture))
+	
 print("Finished grabbing and reading KIS...")
 print()
+
 
 # write complete list of lectures
 file = open(COURSELIST_FILENAME, "w", encoding=COURSELIST_FILE_ENCODING)
