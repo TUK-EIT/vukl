@@ -104,7 +104,7 @@ with urllib.request.urlopen(URL) as url:
 	text = url.read().decode(URLENCODING)
 
 # get everything inside the list of events for EIT
-re_rows = re.findall(r"<tr class=\"blue[12]\">(.*?)</tr>", text, re.S)
+re_rows = re.findall(r"<tr class=\"blue.*?\">(.*?)</tr>", text, re.S)
 
 # get all lectures and exercises that are EIT
 re_excerciseOrLecture = []
